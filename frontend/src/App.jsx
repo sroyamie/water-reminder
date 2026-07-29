@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-const API_URL = 'http://127.0.0.1:5000';
+const API_URL = 'https://water-reminder-backend.onrender.com';
 const DAILY_GOAL_ML = 2500;
 const REMINDER_INTERVAL_MS = 60 * 60 * 1000; // 60 minutes
 
