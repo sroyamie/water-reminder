@@ -125,3 +125,70 @@ button:hover {
   cursor: pointer;
   padding: 0 0 0 12px;
 }
+
+.top-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.dark-toggle {
+  padding: 8px 14px;
+  font-size: 13px;
+  border: none;
+  border-radius: 8px;
+  background-color: #424242;
+  color: white;
+  cursor: pointer;
+}
+
+.ring-container {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.goal-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.goal-btn {
+  padding: 8px 16px;
+  font-size: 13px;
+  border: none;
+  border-radius: 8px;
+  background-color: #ff9800;
+  color: white;
+  cursor: pointer;
+}
+
+.goal-input {
+  padding: 8px;
+  border-radius: 8px;
+  border: 1px solid #ccc;
+  width: 100px;
+  font-size: 13px;
+}
+
+.app.dark {
+  background-color: #121212;
+  color: #eee;
+  border-radius: 12px;
+  padding-bottom: 20px;
+}
+
+.app.dark .history-bar-track {
+  background-color: #2a2a2a;
+}
+
+.app.dark .history-label {
+  color: #aaa;
+}
+
+.app.dark .progress-text {
+  color: #ccc;
+}

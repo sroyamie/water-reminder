@@ -1,9 +1,8 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-const API_URL = 'https://AmieSRoy.pythonanywhere.com';
-const DAILY_GOAL_ML = 2500;
-const REMINDER_INTERVAL_MS = 60 * 60 * 1000; // 60 minutes
+const API_URL = 'https://yourusername.pythonanywhere.com';
+const DEFAULT_GOAL_ML = 2500;
 
 function App() {
   const [totalToday, setTotalToday] = useState(0);
@@ -11,12 +10,28 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [lastLogTime, setLastLogTime] = useState(Date.now());
   const [showReminderBanner, setShowReminderBanner] = useState(false);
+  const [darkMode, setDarkMode] = useState(false);
+  const [dailyGoal, setDailyGoal] = useState(DEFAULT_GOAL_ML);
+  const [editingGoal, setEditingGoal] = useState(false);
+  const [goalInput, setGoalInput] = useState(DEFAULT_GOAL_ML);
 
+  const REMINDER_INTERVAL_MS = 60 * 60 * 1000;
   const lastLogTimeRef = useRef(lastLogTime);
 
   useEffect(() => {
     lastLogTimeRef.current = lastLogTime;
   }, [lastLogTime]);
+
+  // Load saved preferences from this browser
+  useEffect(() => {
+    const savedGoal = localStorage.getItem('dailyGoal');
+    if (savedGoal) {
+      setDailyGoal(Number(savedGoal));
+      setGoalInput(Number(savedGoal));
+    }
+    const savedDark = localStorage.getItem('darkMode');
+    if (savedDark) setDarkMode(savedDark === 'true');
+  }, []);
 
   useEffect(() => {
     fetchToday();
@@ -27,7 +42,7 @@ function App() {
       if (elapsed >= REMINDER_INTERVAL_MS) {
         setShowReminderBanner(true);
       }
-    }, 60 * 1000); // check every 1 minute
+    }, 60 * 1000);
 
     return () => clearInterval(checkInterval);
   }, []);
@@ -62,7 +77,7 @@ function App() {
         body: JSON.stringify({ amount_ml: amount }),
       });
       setLastLogTime(Date.now());
-      setShowReminderBanner(false); // dismiss banner once they log water
+      setShowReminderBanner(false);
       fetchToday();
       fetchHistory();
     } catch (err) {
@@ -70,7 +85,20 @@ function App() {
     }
   };
 
-  const progressPercent = Math.min((totalToday / DAILY_GOAL_ML) * 100, 100);
+  const saveGoal = () => {
+    const newGoal = Math.max(500, Number(goalInput) || DEFAULT_GOAL_ML);
+    setDailyGoal(newGoal);
+    localStorage.setItem('dailyGoal', newGoal);
+    setEditingGoal(false);
+  };
+
+  const toggleDarkMode = () => {
+    const newMode = !darkMode;
+    setDarkMode(newMode);
+    localStorage.setItem('darkMode', newMode);
+  };
+
+  const progressPercent = Math.min((totalToday / dailyGoal) * 100, 100);
 
   const historyEntries = Object.entries(history)
     .sort((a, b) => new Date(b[0]) - new Date(a[0]))
@@ -79,9 +107,19 @@ function App() {
 
   if (loading) return <div className="app"><p>Loading...</p></div>;
 
+  // SVG circular progress ring math
+  const radius = 80;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progressPercent / 100) * circumference;
+
   return (
-    <div className="app">
-      <h1>💧 Water Reminder</h1>
+    <div className={`app ${darkMode ? 'dark' : ''}`}>
+      <div className="top-bar">
+        <h1>💧 Water Reminder</h1>
+        <button className="dark-toggle" onClick={toggleDarkMode}>
+          {darkMode ? '☀️ Light' : '🌙 Dark'}
+        </button>
+      </div>
 
       {showReminderBanner && (
         <div className="reminder-banner">
@@ -90,12 +128,49 @@ function App() {
         </div>
       )}
 
-      <div className="progress-container">
-        <div className="progress-bar" style={{ width: `${progressPercent}%` }} />
+      <div className="ring-container">
+        <svg width="200" height="200" viewBox="0 0 200 200">
+          <circle
+            cx="100" cy="100" r={radius}
+            fill="none" stroke={darkMode ? '#333' : '#e0e0e0'} strokeWidth="16"
+          />
+          <circle
+            cx="100" cy="100" r={radius}
+            fill="none" stroke="#4fc3f7" strokeWidth="16"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            strokeLinecap="round"
+            transform="rotate(-90 100 100)"
+            style={{ transition: 'stroke-dashoffset 0.4s ease' }}
+          />
+          <text x="100" y="95" textAnchor="middle" fontSize="28" fontWeight="700" fill={darkMode ? '#fff' : '#333'}>
+            {Math.round(progressPercent)}%
+          </text>
+          <text x="100" y="120" textAnchor="middle" fontSize="14" fill={darkMode ? '#ccc' : '#666'}>
+            {totalToday} / {dailyGoal} ml
+          </text>
+        </svg>
       </div>
-      <p className="progress-text">
-        {totalToday} ml / {DAILY_GOAL_ML} ml
-      </p>
+
+      <div className="goal-row">
+        {editingGoal ? (
+          <>
+            <input
+              type="number"
+              value={goalInput}
+              onChange={(e) => setGoalInput(e.target.value)}
+              className="goal-input"
+              min="500"
+              step="100"
+            />
+            <button className="goal-btn" onClick={saveGoal}>Save</button>
+          </>
+        ) : (
+          <button className="goal-btn" onClick={() => setEditingGoal(true)}>
+            🎯 Edit Daily Goal ({dailyGoal}ml)
+          </button>
+        )}
+      </div>
 
       <div className="buttons">
         <button onClick={() => logWater(250)}>+250ml</button>
@@ -107,7 +182,7 @@ function App() {
       <div className="history-chart">
         {historyEntries.length === 0 && <p className="no-data">No history yet</p>}
         {historyEntries.map(([day, amount]) => {
-          const heightPercent = Math.min((amount / DAILY_GOAL_ML) * 100, 100);
+          const heightPercent = Math.min((amount / dailyGoal) * 100, 100);
           return (
             <div key={day} className="history-bar-wrapper">
               <div className="history-bar-track">
