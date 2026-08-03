@@ -192,3 +192,150 @@ button:hover {
 .app.dark .progress-text {
   color: #ccc;
 }
+
+.streak-banner {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ff6f00;
+  margin-bottom: 10px;
+}
+
+.missed-stats {
+  text-align: center;
+  font-size: 13px;
+  color: #666;
+  margin: 12px 0;
+}
+
+.app.dark .missed-stats {
+  color: #aaa;
+}
+
+.chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 30px;
+}
+
+.range-toggle {
+  display: flex;
+  gap: 6px;
+}
+
+.range-toggle button {
+  padding: 6px 12px;
+  font-size: 12px;
+  border: none;
+  border-radius: 6px;
+  background-color: #e0e0e0;
+  cursor: pointer;
+}
+
+.range-toggle button.active {
+  background-color: #4fc3f7;
+  color: white;
+}
+
+.history-chart.compact {
+  gap: 4px;
+}
+
+.history-chart.compact .history-bar-track {
+  width: 12px;
+}
+
+.calendar-section {
+  margin-top: 30px;
+}
+
+.calendar-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.calendar-header button {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: inherit;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+.calendar-day-label {
+  text-align: center;
+  font-size: 11px;
+  color: #999;
+  font-weight: 600;
+}
+
+.calendar-cell {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  font-size: 12px;
+  background-color: #f0f0f0;
+}
+
+.app.dark .calendar-cell {
+  background-color: #2a2a2a;
+}
+
+.calendar-cell.met {
+  background-color: #81c784;
+  color: white;
+}
+
+.calendar-cell.partial {
+  background-color: #ffb74d;
+  color: white;
+}
+
+.calendar-cell.missed {
+  background-color: #e57373;
+  color: white;
+}
+
+.calendar-cell.empty {
+  background: none;
+}
+
+.calendar-legend {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 11px;
+  color: #666;
+}
+
+.app.dark .calendar-legend {
+  color: #aaa;
+}
+
+.legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  margin-right: 4px;
+}
+
+.legend-dot.met { background-color: #81c784; }
+.legend-dot.partial { background-color: #ffb74d; }
+.legend-dot.missed { background-color: #e57373; }
