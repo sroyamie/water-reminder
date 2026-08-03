@@ -339,3 +339,129 @@ button:hover {
 .legend-dot.met { background-color: #81c784; }
 .legend-dot.partial { background-color: #ffb74d; }
 .legend-dot.missed { background-color: #e57373; }
+
+.calc-btn {
+  background-color: #7b1fa2;
+}
+
+.calculator-panel {
+  background-color: #f5f5f5;
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 300px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.app.dark .calculator-panel {
+  background-color: #1e1e1e;
+}
+
+.calculator-panel label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  gap: 10px;
+}
+
+.calculator-panel input, .calculator-panel select {
+  padding: 6px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  width: 100px;
+}
+
+.beverage-row {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.beverage-btn {
+  padding: 8px 12px;
+  font-size: 13px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: white;
+  cursor: pointer;
+}
+
+.app.dark .beverage-btn {
+  background-color: #2a2a2a;
+  border-color: #444;
+  color: #eee;
+}
+
+.beverage-btn.active {
+  border-color: #4fc3f7;
+  background-color: #e1f5fe;
+}
+
+.app.dark .beverage-btn.active {
+  background-color: #01579b;
+}
+
+.action-row {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.io-btn {
+  padding: 8px 14px;
+  font-size: 13px;
+  border: none;
+  border-radius: 8px;
+  background-color: #5c6bc0;
+  color: white;
+  cursor: pointer;
+}
+
+.achievements-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+  max-width: 400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.achievement-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  background-color: #f0f0f0;
+}
+
+.app.dark .achievement-item {
+  background-color: #2a2a2a;
+}
+
+.achievement-item.unlocked {
+  background-color: #c8e6c9;
+}
+
+.app.dark .achievement-item.unlocked {
+  background-color: #2e5e33;
+}
+
+.achievement-item.locked {
+  opacity: 0.4;
+}
+
+.achievement-icon {
+  font-size: 18px;
+}

@@ -4,6 +4,13 @@ import './App.css';
 const API_URL = 'https://yourusername.pythonanywhere.com';
 const DEFAULT_GOAL_ML = 2500;
 
+const BEVERAGES = [
+  { id: 'water', label: '💧 Water' },
+  { id: 'tea', label: '🍵 Tea' },
+  { id: 'coffee', label: '☕ Coffee' },
+  { id: 'juice', label: '🧃 Juice' },
+];
+
 const calculateStreak = (history, goal) => {
   let streak = 0;
   const today = new Date();
@@ -15,7 +22,7 @@ const calculateStreak = (history, goal) => {
     if (amount >= goal) {
       streak++;
     } else if (i === 0) {
-      continue; // today still in progress, don't break streak yet
+      continue;
     } else {
       break;
     }
@@ -67,6 +74,16 @@ const getMonthGrid = (year, month, history, goal) => {
   return cells;
 };
 
+const ACHIEVEMENTS = [
+  { id: 'first_drop', name: 'First Drop', icon: '💧', check: (s) => s.daysLogged >= 1 },
+  { id: 'streak_3', name: '3-Day Streak', icon: '🔥', check: (s) => s.streak >= 3 },
+  { id: 'streak_7', name: '7-Day Streak', icon: '🔥', check: (s) => s.streak >= 7 },
+  { id: 'streak_30', name: '30-Day Streak', icon: '🏆', check: (s) => s.streak >= 30 },
+  { id: 'ten_liters', name: '10 Liters Club', icon: '🥤', check: (s) => s.totalAllTime >= 10000 },
+  { id: 'fifty_liters', name: '50 Liters Club', icon: '🌊', check: (s) => s.totalAllTime >= 50000 },
+  { id: 'century', name: 'Century (100 days logged)', icon: '💯', check: (s) => s.daysLogged >= 100 },
+];
+
 function App() {
   const [totalToday, setTotalToday] = useState(0);
   const [history, setHistory] = useState({});
@@ -77,8 +94,13 @@ function App() {
   const [dailyGoal, setDailyGoal] = useState(DEFAULT_GOAL_ML);
   const [editingGoal, setEditingGoal] = useState(false);
   const [goalInput, setGoalInput] = useState(DEFAULT_GOAL_ML);
-  const [chartRange, setChartRange] = useState(7); // 7 = week, 30 = month
+  const [chartRange, setChartRange] = useState(7);
   const [calendarDate, setCalendarDate] = useState(new Date());
+  const [selectedBeverage, setSelectedBeverage] = useState('water');
+  const [showCalculator, setShowCalculator] = useState(false);
+  const [weightInput, setWeightInput] = useState(70);
+  const [activityLevel, setActivityLevel] = useState('medium');
+  const [showAchievements, setShowAchievements] = useState(false);
 
   const REMINDER_INTERVAL_MS = 60 * 60 * 1000;
   const lastLogTimeRef = useRef(lastLogTime);
@@ -138,7 +160,7 @@ function App() {
       await fetch(`${API_URL}/log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount_ml: amount }),
+        body: JSON.stringify({ amount_ml: amount, beverage: selectedBeverage }),
       });
       setLastLogTime(Date.now());
       setShowReminderBanner(false);
@@ -162,6 +184,22 @@ function App() {
     localStorage.setItem('darkMode', newMode);
   };
 
+  const calculateSuggestedGoal = () => {
+    const weight = Math.max(30, Number(weightInput) || 70);
+    let goal = weight * 35;
+    if (activityLevel === 'medium') goal += 350;
+    if (activityLevel === 'high') goal += 750;
+    goal = Math.round(goal / 50) * 50; // round to nearest 50ml
+    setGoalInput(goal);
+    setDailyGoal(goal);
+    localStorage.setItem('dailyGoal', goal);
+    setShowCalculator(false);
+  };
+
+  const exportHistory = () => {
+    window.open(`${API_URL}/export`, '_blank');
+  };
+
   const progressPercent = Math.min((totalToday / dailyGoal) * 100, 100);
 
   const historyEntries = Object.entries(history)
@@ -171,6 +209,11 @@ function App() {
 
   const streak = calculateStreak(history, dailyGoal);
   const missedStats = calculateMissedStats(history, dailyGoal);
+
+  const totalAllTime = Object.values(history).reduce((sum, v) => sum + v, 0);
+  const daysLogged = Object.keys(history).length;
+  const achievementStats = { streak, totalAllTime, daysLogged };
+  const unlockedAchievements = ACHIEVEMENTS.filter((a) => a.check(achievementStats));
 
   const changeMonth = (delta) => {
     const newDate = new Date(calendarDate);
@@ -244,6 +287,39 @@ function App() {
             🎯 Edit Daily Goal ({dailyGoal}ml)
           </button>
         )}
+        <button className="goal-btn calc-btn" onClick={() => setShowCalculator(!showCalculator)}>
+          🧮 Calculate My Goal
+        </button>
+      </div>
+
+      {showCalculator && (
+        <div className="calculator-panel">
+          <label>
+            Weight (kg):
+            <input type="number" value={weightInput} onChange={(e) => setWeightInput(e.target.value)} min="30" />
+          </label>
+          <label>
+            Activity Level:
+            <select value={activityLevel} onChange={(e) => setActivityLevel(e.target.value)}>
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </label>
+          <button className="goal-btn" onClick={calculateSuggestedGoal}>Apply Suggested Goal</button>
+        </div>
+      )}
+
+      <div className="beverage-row">
+        {BEVERAGES.map((b) => (
+          <button
+            key={b.id}
+            className={`beverage-btn ${selectedBeverage === b.id ? 'active' : ''}`}
+            onClick={() => setSelectedBeverage(b.id)}
+          >
+            {b.label}
+          </button>
+        ))}
       </div>
 
       <div className="buttons">
@@ -251,6 +327,27 @@ function App() {
         <button onClick={() => logWater(500)}>+500ml</button>
         <button onClick={() => logWater(1000)}>+1000ml</button>
       </div>
+
+      <div className="action-row">
+        <button className="io-btn" onClick={() => setShowAchievements(!showAchievements)}>
+          🏅 Achievements ({unlockedAchievements.length}/{ACHIEVEMENTS.length})
+        </button>
+        <button className="io-btn" onClick={exportHistory}>⬇️ Export History</button>
+      </div>
+
+      {showAchievements && (
+        <div className="achievements-panel">
+          {ACHIEVEMENTS.map((a) => {
+            const unlocked = a.check(achievementStats);
+            return (
+              <div key={a.id} className={`achievement-item ${unlocked ? 'unlocked' : 'locked'}`}>
+                <span className="achievement-icon">{a.icon}</span>
+                <span>{a.name}</span>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       <div className="missed-stats">
         📉 Missed goal {missedStats.missedDays}/30 days &nbsp;|&nbsp; Avg shortfall: {missedStats.avgShortfall}ml
