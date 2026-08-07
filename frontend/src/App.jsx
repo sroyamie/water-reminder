@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
+import { supabase } from './supabaseClient';
+import Auth from './Auth';
 
 const API_URL = 'https://AmieSRoy.pythonanywhere.com';
 const DEFAULT_GOAL_ML = 2500;
@@ -101,6 +103,7 @@ function App() {
   const [weightInput, setWeightInput] = useState(70);
   const [activityLevel, setActivityLevel] = useState('medium');
   const [showAchievements, setShowAchievements] = useState(false);
+  const [user, setUser] = useState(null);
   const [notificationPermission, setNotificationPermission] = useState(
   typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
 );
@@ -141,7 +144,7 @@ const [reminderIntervalMs, setReminderIntervalMs] = useState(60 * 60 * 1000);
 }, 60 * 1000);
 
     return () => clearInterval(checkInterval);
-  }, []);
+  }, [user]);
 
   useEffect(() => {
   if (!navigator.geolocation) return;
@@ -176,6 +179,18 @@ const [reminderIntervalMs, setReminderIntervalMs] = useState(60 * 60 * 1000);
   );
 }, []);
 
+useEffect(() => {
+  supabase.auth.getSession().then(({ data: { session } }) => {
+    setUser(session?.user ?? null);
+  });
+
+  const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    setUser(session?.user ?? null);
+  });
+
+  return () => listener.subscription.unsubscribe();
+}, []);
+
 const requestNotificationPermission = async () => {
   if (typeof Notification === 'undefined') {
     setNotificationPermission('unsupported');
@@ -194,42 +209,81 @@ const sendTestNotification = () => {
 };
 
   const fetchToday = async () => {
-    try {
+  try {
+    if (user) {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const { data, error } = await supabase
+        .from('water_logs')
+        .select('amount_ml')
+        .eq('user_id', user.id)
+        .gte('logged_at', `${todayStr}T00:00:00`)
+        .lt('logged_at', `${todayStr}T23:59:59`);
+      if (error) throw error;
+      const total = data.reduce((sum, row) => sum + row.amount_ml, 0);
+      setTotalToday(total);
+    } else {
       const res = await fetch(`${API_URL}/today`);
       const data = await res.json();
       setTotalToday(data.total_ml);
-    } catch (err) {
-      console.error('Error fetching today:', err);
-    } finally {
-      setLoading(false);
     }
-  };
+  } catch (err) {
+    console.error('Error fetching today:', err);
+  } finally {
+    setLoading(false);
+  }
+};
 
   const fetchHistory = async () => {
-    try {
+  try {
+    if (user) {
+      const { data, error } = await supabase
+        .from('water_logs')
+        .select('amount_ml, logged_at')
+        .eq('user_id', user.id);
+      if (error) throw error;
+      const grouped = {};
+      data.forEach((row) => {
+        const day = row.logged_at.split('T')[0];
+        grouped[day] = (grouped[day] || 0) + row.amount_ml;
+      });
+      setHistory(grouped);
+    } else {
       const res = await fetch(`${API_URL}/history`);
       const data = await res.json();
       setHistory(data);
-    } catch (err) {
-      console.error('Error fetching history:', err);
     }
-  };
+  } catch (err) {
+    console.error('Error fetching history:', err);
+  }
+};
 
   const logWater = async (amount) => {
-    try {
+  try {
+    const multiplier = { water: 1.0, tea: 0.9, coffee: 0.8, juice: 0.85 }[selectedBeverage] || 1.0;
+    const effectiveAmount = Math.round(amount * multiplier);
+
+    if (user) {
+      const { error } = await supabase.from('water_logs').insert({
+        user_id: user.id,
+        amount_ml: effectiveAmount,
+        beverage: selectedBeverage,
+      });
+      if (error) throw error;
+    } else {
       await fetch(`${API_URL}/log`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ amount_ml: amount, beverage: selectedBeverage }),
       });
-      setLastLogTime(Date.now());
-      setShowReminderBanner(false);
-      fetchToday();
-      fetchHistory();
-    } catch (err) {
-      console.error('Error logging water:', err);
     }
-  };
+    setLastLogTime(Date.now());
+    setShowReminderBanner(false);
+    fetchToday();
+    fetchHistory();
+  } catch (err) {
+    console.error('Error logging water:', err);
+  }
+};
 
   const saveGoal = () => {
     const newGoal = Math.max(500, Number(goalInput) || DEFAULT_GOAL_ML);
@@ -292,6 +346,7 @@ const sendTestNotification = () => {
 
   return (
     <div className={`app ${darkMode ? 'dark' : ''}`}>
+      <Auth user={user} />
       <div className="top-bar">
         <h1>💧 Water Reminder</h1>
         <button className="dark-toggle" onClick={toggleDarkMode}>
