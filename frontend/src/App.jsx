@@ -5,10 +5,10 @@ const API_URL = 'https://yourusername.pythonanywhere.com';
 const DEFAULT_GOAL_ML = 2500;
 
 const BEVERAGES = [
-  { id: 'water', label: '💧 Water' },
-  { id: 'tea', label: '🍵 Tea' },
-  { id: 'coffee', label: '☕ Coffee' },
-  { id: 'juice', label: '🧃 Juice' },
+  { id: 'water', label: 'Water' },
+  { id: 'tea', label: 'Tea' },
+  { id: 'coffee', label: 'Coffee' },
+  { id: 'juice', label: 'Juice' },
 ];
 
 const calculateStreak = (history, goal) => {
