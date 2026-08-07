@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from datetime import datetime, date
 import sqlite3
+import requests
 
 app = Flask(__name__)
 CORS(app)  # allows our React frontend to talk to this backend
@@ -99,6 +100,44 @@ def export_history():
 
     csv_content = "\n".join(csv_lines)
     return Response(csv_content, mimetype="text/csv", headers={"Content-Disposition": "attachment;filename=water_history.csv"})
+
+try:
+    from config import GEMINI_API_KEY
+except ImportError:
+    GEMINI_API_KEY = None
+
+@app.route("/hydration-tip", methods=["POST"])
+def hydration_tip():
+    data = request.get_json() or {}
+    total_today = data.get("total_today", 0)
+    goal = data.get("goal", 2500)
+    streak = data.get("streak", 0)
+
+    prompt = (
+        f"You are a friendly hydration coach. The user has drunk {total_today}ml out of their "
+        f"{goal}ml daily water goal today, and has a {streak}-day streak of meeting their goal. "
+        f"Give a short, encouraging, practical hydration tip (2-3 sentences max). "
+        f"Be warm and specific to their situation."
+    )
+
+    try:
+        response = requests.post(
+            "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent",
+            headers={
+                "x-goog-api-key": GEMINI_API_KEY,
+                "Content-Type": "application/json",
+            },
+            json={"contents": [{"parts": [{"text": prompt}]}]},
+            timeout=15,
+        )
+        result = response.json()
+        tip = result["candidates"][0]["content"]["parts"][0]["text"]
+        return jsonify({"tip": tip.strip()})
+    except Exception as e:
+        return jsonify({
+            "tip": "Stay hydrated! Try drinking water consistently throughout the day rather than all at once.",
+            "error": str(e)
+        }), 200
 
 if __name__ == "__main__":
     import os

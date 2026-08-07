@@ -1,0 +1,12 @@
+# Python
+backend/venv/
+backend/__pycache__/
+backend/database.db
+backend/config.py
+
+# Node
+frontend/node_modules/
+frontend/dist/
+
+# Editor
+.vscode/
