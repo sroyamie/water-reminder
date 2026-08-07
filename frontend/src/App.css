@@ -467,3 +467,27 @@ button:hover {
 .achievement-icon {
   font-size: 18px;
 }
+
+.notification-section {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+
+.weather-info {
+  color: #666;
+}
+
+.app.dark .weather-info {
+  color: #ccc;
+}
+
+.notification-blocked {
+  color: #d32f2f;
+  font-size: 11px;
+  max-width: 280px;
+}

@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './App.css';
 
-const API_URL = 'https://yourusername.pythonanywhere.com';
+const API_URL = 'https://AmieSRoy.pythonanywhere.com';
 const DEFAULT_GOAL_ML = 2500;
 
 const BEVERAGES = [
@@ -101,8 +101,13 @@ function App() {
   const [weightInput, setWeightInput] = useState(70);
   const [activityLevel, setActivityLevel] = useState('medium');
   const [showAchievements, setShowAchievements] = useState(false);
+  const [notificationPermission, setNotificationPermission] = useState(
+  typeof Notification !== 'undefined' ? Notification.permission : 'unsupported'
+);
+const [weatherTemp, setWeatherTemp] = useState(null);
+const [reminderIntervalMs, setReminderIntervalMs] = useState(60 * 60 * 1000);
 
-  const REMINDER_INTERVAL_MS = 60 * 60 * 1000;
+  
   const lastLogTimeRef = useRef(lastLogTime);
 
   useEffect(() => {
@@ -124,14 +129,69 @@ function App() {
     fetchHistory();
 
     const checkInterval = setInterval(() => {
-      const elapsed = Date.now() - lastLogTimeRef.current;
-      if (elapsed >= REMINDER_INTERVAL_MS) {
-        setShowReminderBanner(true);
-      }
-    }, 60 * 1000);
+  const elapsed = Date.now() - lastLogTimeRef.current;
+  if (elapsed >= reminderIntervalMs) {
+    setShowReminderBanner(true);
+    if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
+      new Notification('💧 Time to hydrate!', {
+        body: "It's been a while since your last log. Drink some water!",
+      });
+    }
+  }
+}, 60 * 1000);
 
     return () => clearInterval(checkInterval);
   }, []);
+
+  useEffect(() => {
+  if (!navigator.geolocation) return;
+
+  navigator.geolocation.getCurrentPosition(
+    async (position) => {
+      try {
+        const { latitude, longitude } = position.coords;
+        const res = await fetch(
+          `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m`
+        );
+        const data = await res.json();
+        const temp = data.current?.temperature_2m;
+        if (temp !== undefined) {
+          setWeatherTemp(temp);
+          // Hot day: remind more often. Otherwise, default hourly.
+          if (temp >= 32) {
+            setReminderIntervalMs(30 * 60 * 1000); // every 30 min
+          } else if (temp >= 27) {
+            setReminderIntervalMs(45 * 60 * 1000); // every 45 min
+          } else {
+            setReminderIntervalMs(60 * 60 * 1000); // every 60 min
+          }
+        }
+      } catch (err) {
+        console.error('Weather fetch failed:', err);
+      }
+    },
+    (err) => {
+      console.log('Geolocation permission denied or unavailable, using default reminder interval');
+    }
+  );
+}, []);
+
+const requestNotificationPermission = async () => {
+  if (typeof Notification === 'undefined') {
+    setNotificationPermission('unsupported');
+    return;
+  }
+  const permission = await Notification.requestPermission();
+  setNotificationPermission(permission);
+};
+
+const sendTestNotification = () => {
+  if (Notification.permission === 'granted') {
+    new Notification('💧 Test notification', {
+      body: 'If you can see this, notifications are working!',
+    });
+  }
+};
 
   const fetchToday = async () => {
     try {
@@ -247,6 +307,29 @@ function App() {
       )}
 
       <div className="streak-banner">🔥 {streak} day{streak !== 1 ? 's' : ''} streak</div>
+      
+      <div className="notification-section">
+  {weatherTemp !== null && (
+    <span className="weather-info">
+      🌡️ {weatherTemp}°C — reminders every {Math.round(reminderIntervalMs / 60000)} min
+    </span>
+  )}
+  {notificationPermission === 'default' && (
+    <button className="io-btn" onClick={requestNotificationPermission}>
+      🔔 Enable Notifications
+    </button>
+  )}
+  {notificationPermission === 'granted' && (
+    <button className="io-btn" onClick={sendTestNotification}>
+      🔔 Test Notification
+    </button>
+  )}
+  {notificationPermission === 'denied' && (
+    <span className="notification-blocked">
+      🔕 Notifications blocked — enable them in your browser's site settings
+    </span>
+  )}
+</div>
 
       <div className="ring-container">
         <svg width="200" height="200" viewBox="0 0 200 200">
